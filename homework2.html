@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Homework 2</title>
+</head>
+<body style=" background: lightblue;">
+<!-- Matt Rallo -->
+<!-- 09/01/17 -->
+<!-- Homework 2 -->
+<!-- CMP SCI 4500-->
+
+<h1>Homework 2: A pretty strange game with graphics</h1>
+
+<table border="1" cellpadding="10">
+	<tr><th><h2>Enter number of rows and columns for the grid:</h2></th></tr>
+	<tr><th>Rows: <input type="text" id="num_rows"></th></tr>
+	<tr><th>Columns: <input type="text" id="num_cols"></th></tr>
+	<tr><th><button onclick = "validateInput()">Make Grid</button></th></tr>
+</table>
+<br><br>
+
+<div id="grid" style="display: none;">
+	<h1>Grid: </h1>
+
+	<h3 id="results"></h3>
+	<h3 id="numSteps"></h3>
+	<h3 id="touchData"></h3>
+
+
+	<canvas id="myCanvas" width = "500" height="500" style="border:1px solid #000000;">
+	</canvas>
+
+</div>
+
+<script>
+
+	//Canvas Vars
+    var canvas = document.getElementById("myCanvas");
+    var ctx = canvas.getContext("2d");
+    
+    //GUIDE, Column Position uses HORIZONTAL. Row Position uses VERTICAL
+    var rows = 0;
+    var cols = 0;
+    
+	//Cell Vertical Span and Horitontal span (distance)
+    var verticalDistance = 0;
+    var horizontalDistance = 0;
+
+	//Offset for Marker
+    var verticalOffset = 0;
+    var horizontalOffset = 0;
+	var game = 0;
+	var moveInterval;
+	
+
+	/* 
+		Function validate_input() first clears the information if button has already been
+		clicked. Then it clears the canvas. Afterwards it makes sure the input
+		given was correct. Then it calls makeGrid() and playGame().
+	*/
+	function validateInput(){
+		//set results to blank if button has been clicked again
+		document.getElementById("results").innerHTML = "";
+		document.getElementById("numSteps").innerHTML = "";
+		document.getElementById("touchData").innerHTML = "";
+
+		//clear the canvas from earlier
+		//for some reason it would not clear the canvas all the way unless I changed the width
+		var w = canvas.width;
+		canvas.width = 10;
+		canvas.width = w;
+		
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+		//get input
+		rows = document.getElementById("num_rows").value;
+		cols = document.getElementById("num_cols").value;
+
+		//check if input is a number
+		if(rows == "" || cols == ""){ //make sure it's not blank
+			alert("Text Left Blank!");
+		}
+		else if(isNaN(rows) || isNaN(cols)){ //make sure it's not a character
+			alert("Please Enter an Integer!");
+		}
+		else if(rows > 20 || cols > 20){ //make sure it's not greater than 20
+			alert("Input must be less than or equal to 20!");
+		}
+		else if(rows < 5 || cols < 5){ //make sure it's not less than 5
+			alert("Input must be greater than or equal to 5!");
+		}
+		else{ //let's start making the grid
+			clearInterval(moveInterval);
+			makeGrid();
+			playGame();
+		}
+		
+
+
+	} //ends validate_input
+	
+	/*
+		This function just makes the lines on the canvas so it appears to be 
+		an actual grid.
+	*/
+	function makeGrid(){
+		//display the div tag
+		document.getElementById("grid").style.display = "block";
+	
+		//Cell Vertical Span and Horitontal span (distance)
+		verticalDistance = canvas.height/rows;
+		horizontalDistance = canvas.width/cols;
+		verticalOffset = verticalDistance/2;
+		horizontalOffset = horizontalDistance/2;
+			
+
+
+	
+        //Rows
+        for (var i = 0; i <=  canvas.height; i += verticalDistance) {
+			console.log("hi");
+            ctx.moveTo(0, i);
+            ctx.lineTo(canvas.width, i);
+        }
+        
+        //Columns
+        for (var i = 0; i <= canvas.width; i += horizontalDistance) {
+            ctx.moveTo(i, 0);
+            ctx.lineTo(i,  canvas.height);
+        }
+
+        //Draw
+		ctx.strokeStyle = "black";
+        ctx.stroke();
+    }
+
+	/*
+		This function below starts the game. It first makes a 2d array so I
+		can keep track of the touches. Then it moves the red marker around using 
+		random directions and random number of steps. I use setInterval() to 
+		show the marker move after half a second. If you win it displays the results.
+	*/
+	function playGame(){
+		//We will make our grid match the model. (x,y) (row,col)
+        //(0,0) (0,1) (0,2)...
+        //(1,0) (1,1) (1,2)...
+        //(2,0) (2,1) (2,2)...
+        
+		//Initialize new Grid Array
+        var gridArray = new Array(rows);
+        for (var row = 0; row < rows; row++) {
+            gridArray[row] = new Array(cols);
+            for(var col = 0; col < cols; col++){
+                gridArray[row][col] = 0;
+            }
+        }
+ 
+		//Square Location information
+		//Note we start in the Bottom Left Corner gridArray[row-1][0]
+		var gridCurrentX = rows-1;
+		var gridCurrentY = 0;
+		
+		//var gridPreviousX = rows-1;
+		//var gridPreviousY = 0; 
+
+		//touch the initial spot 
+		gridArray[gridCurrentX][gridCurrentY] += 1;	
+        drawMarker(gridCurrentX, gridCurrentY);
+
+        //Begin Game Loop
+        var turns = 0;
+        moveInterval = setInterval(function(){ 
+
+            //Random Vars
+            var Direction = Math.floor(Math.random() * 4); //0-3
+            var numberSteps = Math.floor(Math.random() * 3); //0-2
+			removeMarker(gridCurrentX, gridCurrentY);
+            switch(Direction){
+                case 0: //Down
+                    console.log('down ' + numberSteps);
+                    if(gridCurrentX+numberSteps < rows){
+                        gridCurrentX += numberSteps;
+                        gridArray[gridCurrentX][gridCurrentY] += 1;
+                        break;
+                    }
+                    else{
+                        gridArray[gridCurrentX][gridCurrentY] += 1;
+                        break;
+                    }
+                    
+                case 1: //Up
+                    console.log('up ' + numberSteps);;
+                    if(gridCurrentX-numberSteps >= 0){
+                        gridCurrentX -= numberSteps;
+                        gridArray[gridCurrentX][gridCurrentY] += 1;
+                        break;
+                    }
+                    else{
+                        gridArray[gridCurrentX][gridCurrentY] += 1;
+                        break;
+                    }
+                
+                case 2: //Left
+                    console.log('left ' + numberSteps);;
+                    if(gridCurrentY-numberSteps >= 0){
+                        gridCurrentY -= numberSteps;
+                        gridArray[gridCurrentX][gridCurrentY] += 1;
+                        break;
+                    }
+                    else{
+                        gridArray[gridCurrentX][gridCurrentY] += 1;
+                        break;
+                    }
+                    
+                case 3: //Right
+                    console.log('right ' + numberSteps);
+                    if(gridCurrentY+numberSteps < cols){
+						gridCurrentY += numberSteps;
+                        gridArray[gridCurrentX][gridCurrentY] += 1;
+                        break;
+                    }
+                    else{
+                        gridArray[gridCurrentX][gridCurrentY] += 1;
+                        break;
+                    }
+            }
+			drawMarker(gridCurrentX, gridCurrentY);
+            
+             //Check Win
+            if(gridCurrentX == 0 && gridCurrentY == cols-1){
+				document.getElementById("results").innerHTML = "WINNER!!!";
+                console.log("You Win ! :)");
+
+				//print out the number of steps
+				document.getElementById("numSteps").innerHTML = "You took " + turns + " steps!";
+				
+				//get max, min, and total number of touches
+				var MAX = 0;
+				var MIN = 1000000; //
+				var TOTAL = 0;
+				for(var i = 0; i < rows; i++){
+					for(var j = 0; j < cols; j++){
+						if(gridArray[i][j] > MAX)
+							MAX = gridArray[i][j];
+						if(gridArray[i][j] < MIN)
+							MIN = gridArray[i][j];
+						TOTAL += gridArray[i][j];
+					}	
+				}
+				
+				var AVG = TOTAL/100;
+				//print out data
+				document.getElementById("touchData").innerHTML = "Maximum number of touches: " + MAX + "<br>Minimum number of touches: " + MIN + "<br>Average number of touches: " + AVG;
+				
+				
+
+
+
+				clearInterval(moveInterval);
+				return;
+            }
+            turns++;
+
+			if(turns > 1000000){
+				document.getElementById("results").innerHTML = "YOU TOOK OVER 1 MILLION STEPS! <br>YOU RAN OUT OF STEPS!";
+				console.log("You Lose ! :')");
+				clearInterval(moveInterval);
+				return;
+			}
+		}, 500); //ends interval
+		
+
+
+	} //ends function
+
+	/*
+		This function just draws a red square whereever we are on the canvas.
+		X is the row we are on, and y is the column we are on.
+	*/
+    function drawMarker(x, y){
+        //Column is horizontal position and Row is vertical position
+        var squareHoritontalPosition = (horizontalDistance*y) + horizontalOffset;
+        var squareVerticalPosition = (verticalDistance*x) + verticalOffset;
+		ctx.fillStyle = "#FF0000";
+        ctx.fillRect(squareHoritontalPosition - 5, squareVerticalPosition - 5, 10, 10);
+    }
+    
+	//This just removes the previous square so you can see what cell we are on
+    function removeMarker(x, y){
+        //Column is horizontal position and Row is vertical position
+        var squareHoritontalPosition = (horizontalDistance*y) + horizontalOffset;
+        var squareVerticalPosition = (verticalDistance*x) + verticalOffset;
+        ctx.clearRect(squareHoritontalPosition - 5, squareVerticalPosition - 6, 11, 11);
+    }
+
+</script>
+
+</body>
+</html>
